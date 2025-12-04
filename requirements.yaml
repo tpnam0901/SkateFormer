@@ -134,4 +134,3 @@ dependencies:
       - tqdm==4.65.0
       - werkzeug==2.3.4
       - zipp==3.15.0
-prefix: /home/viclab/anaconda3/envs/skateformer

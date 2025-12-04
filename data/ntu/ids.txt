@@ -1,0 +1,1 @@
+/home/phuongnam/SkateFormer/data/ntu/random_split_predefined/ids.txt

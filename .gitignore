@@ -1,0 +1,6 @@
+work_dir/
+work_dir*/
+bk/
+data/ntu/denoised_data/
+data/ntu/random*/
+data/nturgbd_raw/

@@ -152,7 +152,8 @@ def split_train_val(train_indices, method="sklearn", ratio=0.05):
 
 
 def split_dataset(skes_joints, label, performer, camera, evaluation, save_path):
-    train_indices, test_indices = get_indices(performer, camera, evaluation)
+    train_indices, test_indices = get_indices(performer, camera, evaluation, save_path)
+
     m = "sklearn"  # 'sklearn' or 'numpy'
     # Select validation set from training set
     # train_indices, val_indices = split_train_val(train_indices, m)
@@ -167,7 +168,8 @@ def split_dataset(skes_joints, label, performer, camera, evaluation, save_path):
     test_y = one_hot_vector(test_labels)
 
     save_name = "NTU60_%s.npz" % evaluation
-    np.savez(save_name, x_train=train_x, y_train=train_y, x_test=test_x, y_test=test_y)
+    save_path = osp.join(save_path, save_name)
+    np.savez(save_path, x_train=train_x, y_train=train_y, x_test=test_x, y_test=test_y)
 
     # Save data into a .h5 file
     # h5file = h5py.File(osp.join(save_path, 'NTU_%s.h5' % (evaluation)), 'w')
@@ -187,44 +189,105 @@ def split_dataset(skes_joints, label, performer, camera, evaluation, save_path):
     # h5file.close()
 
 
-def get_indices(performer, camera, evaluation="CS"):
+def get_indices(performer, camera, evaluation="CS", save_path="./"):
     test_indices = np.empty(0)
     train_indices = np.empty(0)
 
     if evaluation == "CS":  # Cross Subject (Subject IDs)
-        train_ids = [1, 2, 4, 5, 8, 9, 13, 14, 15, 16, 17, 18, 19, 25, 27, 28, 31, 34, 35, 38]
-        test_ids = [3, 6, 7, 10, 11, 12, 20, 21, 22, 23, 24, 26, 29, 30, 32, 33, 36, 37, 39, 40]
+        # train_ids = [1,  2,  4,  5,  8,  9,  13, 14, 15, 16,
+        #              17, 18, 19, 25, 27, 28, 31, 34, 35, 38]
+        # test_ids = [3,  6,  7,  10, 11, 12, 20, 21, 22, 23,
+        #             24, 26, 29, 30, 32, 33, 36, 37, 39, 40]
+        indices = list(range(1, 41))
+        # Randomly pick 10 subjects for training and 30 for testing
+        np.random.shuffle(indices)
+        # train_ids = indices[:10]
+        # test_ids = indices[10:]
+        # Change your train/test split ids here
+        # train_ids = [2, 8, 12, 18, 24, 25, 31, 35]
+        # train_ids = [2, 8, 12, 18, 24, 25, 31]
+        train_ids = [8, 12, 18, 24, 25]
+        test_ids = [
+            27,
+            37,
+            28,
+            7,
+            22,
+            38,
+            # 12,
+            21,
+            26,
+            13,
+            35,
+            16,
+            14,
+            1,
+            4,
+            23,
+            5,
+            32,
+            33,
+            39,
+            3,
+            9,
+            17,
+            19,
+            29,
+            11,
+            30,
+            36,
+            6,
+            # 2,
+            # New test IDs for SkateFormer
+            40,
+            10,
+            15,
+            20,
+            34,
+            31,
+            2,
+        ]
+        train_ids.sort()
+        test_ids.sort()
+        print(f"Train IDs: {len(train_ids)}", train_ids, f"Test IDs: {len(test_ids)}", test_ids)
+        with open(osp.join(save_path, "ids.txt"), "w") as f:
+            f.write("Train IDs:\n")
+            for idx in train_ids:
+                f.write(f"{idx}\n")
+            f.write("Test IDs:\n")
+            for idx in test_ids:
+                f.write(f"{idx}\n")
 
         # Get indices of test data
         for idx in test_ids:
             temp = np.where(performer == idx)[0]  # 0-based index
-            test_indices = np.hstack((test_indices, temp)).astype(np.int)
+            test_indices = np.hstack((test_indices, temp)).astype(np.int32)
 
         # Get indices of training data
         for train_id in train_ids:
             temp = np.where(performer == train_id)[0]  # 0-based index
-            train_indices = np.hstack((train_indices, temp)).astype(np.int)
+            train_indices = np.hstack((train_indices, temp)).astype(np.int32)
     else:  # Cross View (Camera IDs)
         train_ids = [2, 3]
         test_ids = 1
         # Get indices of test data
         temp = np.where(camera == test_ids)[0]  # 0-based index
-        test_indices = np.hstack((test_indices, temp)).astype(np.int)
+        test_indices = np.hstack((test_indices, temp)).astype(np.int32)
 
         # Get indices of training data
         for train_id in train_ids:
             temp = np.where(camera == train_id)[0]  # 0-based index
-            train_indices = np.hstack((train_indices, temp)).astype(np.int)
+            train_indices = np.hstack((train_indices, temp)).astype(np.int32)
 
     return train_indices, test_indices
 
 
 if __name__ == "__main__":
-    camera = np.loadtxt(camera_file, dtype=np.int)  # camera id: 1, 2, 3
-    performer = np.loadtxt(performer_file, dtype=np.int)  # subject id: 1~40
-    label = np.loadtxt(label_file, dtype=np.int) - 1  # action label: 0~59
+    camera = np.loadtxt(camera_file, dtype=np.int32)  # camera id: 1, 2, 3
+    performer = np.loadtxt(performer_file, dtype=np.int32)  # subject id: 1~40
+    label = np.loadtxt(label_file, dtype=np.int32) - 1  # action label: 0~59
 
-    frames_cnt = np.loadtxt(frames_file, dtype=np.int)  # frames_cnt
+    frames_cnt = np.loadtxt(frames_file, dtype=np.int32)  # frames_cnt
     skes_name = np.loadtxt(skes_name_file, dtype=np.string_)
 
     with open(raw_skes_joints_pkl, "rb") as fr:
@@ -234,6 +297,13 @@ if __name__ == "__main__":
 
     skes_joints = align_frames(skes_joints, frames_cnt)  # aligned to the same frame length
 
-    evaluations = ["CS", "CV"]
+    # evaluations = ["CS", "CV"]
+    evaluations = ["CS"]
+    random_seed = np.random.randint(10000)
+    np.random.seed(random_seed)
+    print("Random seed for data splitting: ", random_seed)
+    save_path = osp.join("./", "random_split_predefined9")
+    if not osp.exists(save_path):
+        os.mkdir(save_path)
     for evaluation in evaluations:
         split_dataset(skes_joints, label, performer, camera, evaluation, save_path)
